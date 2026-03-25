@@ -1,0 +1,286 @@
+---
+title: "Assignment 3"
+author: "Hussain Abdul Kadhir"
+date: last-modified
+format:
+  pdf:
+    fontsize: 8pt
+---
+
+## Data Description:
+The data set “p4.20” in MPV package, discusses an experiment to determine the influence of the following five factors on an appropriate measure of the whiteness of rayon ($y$).
+
+-   $x_1$: acid bath temperature
+-   $x_2$: cascade acid concentration
+-   $x_3$: water temperature
+-   $x_4$: sulfide concentration
+-   $x_5$: amount of chlorine bleach
+
+::: {.callout-note}
+## Questions:
+a. Create the scatterplot of each independent variable versus the dependent
+variable. Which variables shows a possible linear relationship?
+b. Discuss and find the best regression model.
+c. Perform a residual analysis including the residual plots. Discuss about the validity of regression model assumption, like normality and constant variance.
+d. Based on the residual analysis in Part c, find possible outlier
+:::
+
+```{r setup, warning=FALSE, message=FALSE}
+library(MPV)
+```
+
+```{r data}
+data(p4.20)
+head(p4.20)
+summary(p4.20)
+attach(p4.20)
+```
+
+## a. Scatterplots and correlation
+```{r scatter_plots_and_correlation, fig.width = 4, fig.height = 3, fig.align = "center"}
+
+# scatter plots 
+plot(acidtemp, y, main="acidtemp vs y")
+plot(acidconc, y, main="acidconc vs y")
+plot(watertemp, y, main="watertemp vs y")
+plot(sulfconc, y, main="sulfconc vs y")
+plot(amtbl, y, main="amtbl vs y")
+
+# correlation 
+cor(y, acidtemp)
+cor(y, acidconc)
+cor(y, watertemp)
+cor(y, sulfconc)
+cor(y, amtbl)
+# acidtemp shows potential linear relationship with response y
+```
+
+## b. Model selection
+```{r simple_regression, tidy=TRUE}
+# since we know from correlation that acidtemp linear related to y
+# we can start with it and do a forward selection manually
+fit1 <- lm(y ~ acidtemp)
+summary(fit1)
+# overall model and acid temp is significant
+fit2 <- lm(y ~ acidtemp + acidconc)
+summary(fit2)
+# overall model is significant but acidconc is not significant
+# r-squared is increased a bit
+# but significant at 0.1 level, we can consider it for the model
+fit3 <- lm(y ~ acidtemp + acidconc + watertemp)
+summary(fit3)
+# overall model is significant but watertemp is not significant
+fit4 <- lm(y ~ acidtemp + acidconc + sulfconc)
+summary(fit4)
+# overall model is significant but sulfconc is not significant
+fit5 <- lm(y ~ acidtemp + acidconc + amtbl)
+summary(fit5)
+# overall model is significant but amtbl is not significant
+
+
+# AIC is a measure of the relative quality of a model 
+# It is based on the likelihood function
+# penalizes models with more parameters to prevent overfitting. 
+# The model with the lowest AIC value is better
+# we can check AIC of the models
+AIC(fit1, fit2, fit3, fit4, fit5)
+# fit 2 has the lowest AIC, so we can consider it as the best model
+
+# using built-in stepwise regression 
+# which uses AIC as the criteria for model selection
+step(lm(y ~ acidtemp + acidconc + watertemp + sulfconc + amtbl), direction = "both")
+
+# we end up with the same model, which is y ~ acidtemp + acidconc
+```
+
+### Check the model with out built in function
+```{r multiple_regression_without_built_in_function, tidy=TRUE}
+
+# y ~ acidtemp + acidconc with out built in function
+
+(n  <- length(y)) # data points
+(p <- 2) # variables
+
+
+# setting up the X matrix
+X = matrix(rbind(rep(1, n), acidtemp, acidconc), byrow = T, ncol = p+1) 
+dim(X)
+
+# beta_hat ~ parameters
+(beta_hat = solve(t(X)%*%X)%*%t(X)%*%y)
+fit2$coefficients # from lm function
+
+
+# y_hat ~ response
+y_hat = X%*%beta_hat
+head(y_hat) # from our computation
+head(fit2$fitted.values) # from lm function
+
+# e_hat ~ error
+e = y - y_hat
+head(e) # from our computation
+head(fit2$residuals) # from lm function
+
+
+#ms_residual 
+ss_residual <- (t(y)%*%y - t(beta_hat)%*%t(X)%*%y)
+(ms_residual <- ss_residual/(length(y) - (ncol(X))))
+summary.aov(fit2)[[1]]["Residuals", "Mean Sq"] # from lm function
+
+#ms_regression
+ss_regression <- t(beta_hat)%*%t(X)%*%y-(sum(y)^2/n)
+(ms_regression <- ss_regression/(ncol(X)-1))
+(summary.aov(fit2)[[1]]["acidtemp", "Mean Sq"] + summary.aov(fit2)[[1]]["acidconc", "Mean Sq"])/2 # from lm function
+
+#ms_total
+ss_total <- (t(y)%*%y-(sum(y))^2/n)
+ms_total <- ss_total/(n-1)
+
+
+# testing the overall significance of the model
+# H_0 : beta1 = beta2 = 0
+# H_1 : at least one beta is not equal to zero
+(f_0 <- ms_regression/ms_residual)
+(summary.aov(fit2)[[1]]["acidtemp", "F value"] + summary.aov(fit2)[[1]]["acidconc", "F value"])/2 # from lm function
+
+p_value <- 1 - pf(f_0, df1 = ncol(X)-1, df2 = length(y) - ncol(X))
+p_value < 0.05 # significant at 0.05 level
+
+
+
+# testing individual significance of the coefficients
+
+
+# for acidtemp
+# H_0 : beta1 = 0
+# H_1 : beta1 != 0
+cjj <- diag(solve(t(X)%*%X))
+se_beta1 <- sqrt(ms_residual*cjj)
+(t_0_acidtemp <- beta_hat[2]/se_beta1[2])
+summary(fit2)$coefficients["acidtemp", "t value"] # from lm function
+
+
+# for acidconc
+# H_0 : beta2 = 0
+# H_1 : beta2 != 0
+(t_0_acidconc <- beta_hat[3]/se_beta1[3])
+summary(fit2)$coefficients["acidconc", "t value"] # from lm function
+
+
+# r-squared
+(r_sq <- ss_regression/ss_total)
+summary(fit2)$r.squared # from lm function
+
+
+# adj r-squared
+(adj_r_sq <- 1 - ms_residual/ms_total)
+summary(fit2)$adj.r.squared # from lm function
+```
+
+
+::: {.callout-note}
+
+## Interpretation of the model:
+-   Both `acidtemp` and `acidconc` are significant at 0.05 level, since their
+    t-statistics are greater than the critical value of t with n-p degrees of freedom.
+-   The overall model is significant, since the p-value for the F statistic is less than 0.05.
+-   The R-squared value of the model is 0.422, which means that 42.2% of the variability in the response variable can be explained by the model.
+-   The adjusted R-squared value is 0.372, which is a more accurate measure of the goodness of fit of the model, since it takes into account the number of predictors in the model.
+-   Since both the overall model and the individual coefficients are significant, we can conclude that there is a significant linear relationship between the response variable and the predictors (acidtemp and acidconc).
+-   But the model doesn't explain variability in the response variable very well, since the R-squared value is not very high.
+:::
+
+
+## c. Residual analysis
+```{r residual_analysis, fig.width = 4, fig.height = 3, fig.align = "center"}
+# residuals are deviation between data and fit
+e = y - y_hat
+
+# mean of residuals should be around zero
+round(mean(e), 5)
+
+# variance of residuals can be estimated by ms_residual
+# rss <- t(e) %*% e
+var(e) # here rss / (n - 1) 
+round(ms_residual, 5) # here rss / (n - p) since p = 3
+# ms_residual is an unbiased estimator of the variance of the error term, sigma^2
+
+## scaling residuals
+
+# 1 standardized residuals
+
+d_res <- e/sqrt( as.numeric(ms_residual))
+
+head(d_res)
+# basically we now have variances of the residuals to be 1
+# outliers can be checked with
+sum(abs(d_res) > 3)
+
+# we can plot 
+hist(d_res, breaks = 15)
+
+# no outliers since we have no standardized residuals greater than 3 in absolute value
+
+#  based on how we estimated the variance of the residuals, we ca have other types of residuals
+
+# 2 studentized residuals
+r_res <- e/sqrt( as.numeric(ms_residual) * (1 - hatvalues(fit2)) )
+# or rstandard(fit2)
+sum(abs(r_res) > 3)
+
+# 3 R - student residuals
+# removing the i-th observation and re-estimating the variance of the residuals
+s_sq <- numeric(length(y))
+for (i in 1:length(y)) {
+  X_i <- X[-i, ]
+  y_i <- y[-i]
+  beta_i <- solve(t(X_i) %*% X_i) %*% t(X_i) %*% y_i
+  e_i <- y_i - X_i %*% beta_i
+  s_sq[i] <- t(e_i) %*% e_i / (length(y_i) - ncol(X_i))
+}
+
+t_res <- e/sqrt( s_sq * (1 - hatvalues(fit2)) )
+# or rstudent(fit2)
+sum(abs(t_res) > 3)
+
+# 4 press residuals
+p_res <- e/(1 - hatvalues(fit2))
+
+
+
+# Diagnostic plots
+# residuals vs fitted values for checking constant variance and finding outliers
+plot(fitted.values(fit2), resid(fit2), main = "Residuals vs Fitted")
+plot(fitted.values(fit2), d_res, main = "Standardized Residuals vs Fitted")
+points(fitted.values(fit2), d_res, col = ifelse(abs(d_res) > 3, "red", "black"), pch = 1)
+plot(fitted.values(fit2), r_res, main = "Studentized Residuals vs Fitted")
+points(fitted.values(fit2), r_res, col = ifelse(abs(r_res) > 3, "red", "black"), pch = 1)
+plot(fitted.values(fit2), t_res, main = "R-Student Residuals vs Fitted")
+points(fitted.values(fit2), t_res, col = ifelse(abs(t_res) > 3, "red", "black"), pch = 1)
+plot(fitted.values(fit2), p_res, main = "Press Residuals vs Fitted")
+points(fitted.values(fit2), p_res, col = ifelse(abs(p_res) > 3, "red", "black"), pch = 1)
+
+# residuals vs independent variables for checking constant variance
+plot(acidconc, resid(fit2), main = "Residuals vs acidconc")
+plot(acidtemp, resid(fit2), main = "Residuals vs acidtemp")
+
+# qq plot for normality
+qqnorm(resid(fit2), main = "QQ Plot of Residuals")
+qqline(resid(fit2))
+
+# test for normality
+shapiro.test(resid(fit2))
+# since p-value is greater than 0.05, we fail to reject the null hypothesis
+# which means the residuals are normally distributed
+```
+
+::: {.callout-note}
+
+## Model assumptions and outliers:
+-   There is a funnel out behaviour in the residuals vs fitted values plot, which indicates that the variance of the residuals is not constant. This violates the homoscedasticity assumption of linear regression. This is same for all scaled residuals.
+-   The qq plot of the residuals shows that the residuals are approximately normally distributed, which satisfies the normality assumption of linear regression.
+-   Shapiro-Wilk normality test also supports the normality of the residuals, since the p-value is greater than 0.05.
+-   The residuals vs independent variables plots doesnt clearly show any pattern, but there is some indication of non-constant variance.
+-   The `d_res`, `r_res`, and `t_res` plots do not show any outliers, since there are no points with absolute values greater than 3.
+-   The `p_res` plot shows some points with large press residuals, which may indicate influential observations. However, since there are no standardized or studentized residuals greater than 3 in absolute value, we do not have any outliers in the model.
+:::

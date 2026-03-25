@@ -2,270 +2,127 @@
 title: "Lecture-code"
 format:
   pdf:
-    mainfont: "Papyrus"
-    headings-font: "Papyrus"
+    fontsize: 8pt
 ---
 
-```{r }
-# x <- scan() # wont accept string
-floor(6.3) # same as 6.3%/%1
+# Basic Operations
+
+```{r, warning = FALSE, message = FALSE, fig.width = 4, fig.height = 3, fig.align = "center"}
+floor(6.3)  # same as 6.3 %/% 1
+
+# Temperature vector
 temp <- c(273, 283, 293, 303, 313, 323, 333, 343, 353, 363, 373)
 length(temp)
 r_temp <- rev(temp)
 summary(r_temp)
+
+# Vapor pressure
 vp <- c(4.6, 9.2, 17.5, 31.8, 55.3, 92.5, 149.4, 233.7, 355.1, 525.8, 760.0)
 vapor <- data.frame(temp, vp)
 vapor$temp
 vapor$vp
 inv_temp <- 1/vapor$temp
-plot(vapor)
 plot(vapor$temp, vapor$vp)
 ```
 
-```{r}
-# generating numbers
+# Generating numbers & plotting
+
+```{r, warning = FALSE, message = FALSE, fig.width = 4, fig.height = 3, fig.align = "center"}
 seq(0,1,length = 15)
 rep("A", 10)
 runif(50, 0, 1)
 
-
-# plotting
 x <- -50:50
-y <-  x^3
+y <- x^3
+plot(x,y, type = "p")
+plot(x,y, type = "l")
+plot(x,y, type = "b")
+plot(x,y, type = "n")
+plot(x,y, type = "h")
+plot(x, y, type = "l", lty = 1:4)
 
-plot(x,y, type = "p") 
-plot(x,y, type = "l") 
-plot(x,y, type = "b") 
-plot(x,y, type = "n") 
-plot(x,y, type = "h") 
-plot(x, y, type = "l", lty = 1)
-plot(x, y, type = "l", lty = 2)
-plot(x, y, type = "l", lty = 3)
-plot(x, y, type = "l", lty = 4)
 x <- 0:50
-y <-  x^3
+y <- x^3
 plot(x, y, type = "p", pch = "💀")
 
-
-
-(hist(trunc(100*runif(1000))))
-(hist(rnorm(1e6,5,5)))
-(hist(rexp(1e6), nclass = 35))
+hist(trunc(100*runif(1000)))
+hist(rnorm(1e6,5,5))
+hist(rexp(1e6), nclass = 35)
 barplot(trunc(10*runif(10)))
-hist(trunc(10*runif(10)))
 boxplot(rexp(1000))
+```
 
+# Scatter & line plots
 
-
+```{r, warning = FALSE, message = FALSE, fig.width = 4, fig.height = 3, fig.align = "center"}
 plot(2:10, 32:40, pch = 10)
 x <- seq(2, 10, length = 20)
 y <- seq(32, 40, length = 20)
 points(x^2, y)
-
 plot(2:10, 32:40, pch = 15, ylim = c(0,100))
 lines(x, y)
+```
 
+# Residual plots example
+
+```{r, warning = FALSE, message = FALSE, fig.width = 4, fig.height = 3, fig.align = "center"}
 x <- runif(100)
-
 plot(floor(10*x), 10*x, pch = 10)
 points(ceiling(10*x), 10*x, pch = 15, col = "blue")
 points(round(10*x), 10*x, pch = 5, col = "red")
 abline(0,1)
+```
 
+# Trigonometric functions
 
+```{r, warning = FALSE, message = FALSE}
 x <- seq(0, 2*pi, length = 100)
-x
 plot(x, sin(x), type = "l", col = "blue")
 points(x, cos(x), type = "l", col = "red")
 abline(h=0)
-
-
 ```
 
-```{r } 
-# R code Example 2.1
+# Simple Regression Example
 
-Age<-c(15.50, 23.75, 8.00, 17.00, 5.50, 19.00, 24.00, 2.50, 7.50, 11.00, 13.00, 3.75, 25.00, 9.75, 22.00, 18.00, 6.00, 12.50, 2.00, 21.50)
-Shear<-c(2158.70, 1678.15, 2316.00, 2061.30, 2207.50, 1708.30, 1784.70, 2575.00, 2357.90, 2256.70, 2165.20, 2399.55, 1779.80, 2336.75, 1765.30, 2053.50, 2414.40, 2200.50, 2654.20, 1753.70)
+```{r, warning = FALSE, message = FALSE, fig.width = 4, fig.height = 3, fig.align = "center",}
+Age <- c(15.50, 23.75, 8.00, 17.00, 5.50, 19.00, 
+24.00, 2.50, 7.50, 11.00, 13.00, 3.75, 25.00, 9.75, 
+22.00, 18.00, 6.00, 12.50, 2.00, 21.50)
+Shear <- c(2158.70, 1678.15, 2316.00, 2061.30, 2207.50, 
+1708.30, 1784.70, 2575.00, 2357.90, 2256.70, 2165.20, 
+2399.55, 1779.80, 2336.75, 1765.30, 2053.50, 2414.40, 
+2200.50, 2654.20, 1753.70)
 
-plot(Age, Shear)  # Scatter Plot
+plot(Age, Shear)
+Rocket.Data <- data.frame(Shear, Age)
 
-
-Rocket.Data<-data.frame(Shear, Age)  # Define the data frame
-
-# Finding regression parameters
-# First method using the formulas
-
-n<-length(Age)
-x<-Age ; y<-Shear
-Sxx<-sum(x^2)-(sum(x))^2/n  # sum of squares of x
-Sxy<-sum(x*y)-sum(x)*sum(y)/n   # sum of squares of xy
-SST <- sum(y^2) - (sum(y))^2/n  # Total sum of squares
-SSRes <- SST - Sxy^2/Sxx                # Regression sum of squares
-hatbeta1<-Sxy/Sxx
-hatbeta0<-mean(y)-hatbeta1*mean(x)
-hatsigma2<-SSRes/(n-2)  # estimate of variance of error term
-
-errorbeta1<-sqrt(hatsigma2/Sxx)  # standard error of beta1
-errorbeta0<-sqrt(hatsigma2*(1/n + (mean(x))^2/Sxx))  # standard error of beta0
+n <- length(Age)
+x <- Age; y <- Shear
+Sxx <- sum(x^2) - (sum(x))^2/n
+Sxy <- sum(x*y) - sum(x)*sum(y)/n
+SST <- sum(y^2) - (sum(y))^2/n
+SSRes <- SST - Sxy^2/Sxx
+hatbeta1 <- Sxy/Sxx
+hatbeta0 <- mean(y) - hatbeta1*mean(x)
+hatsigma2 <- SSRes/(n-2)
+errorbeta1 <- sqrt(hatsigma2/Sxx)
+errorbeta0 <- sqrt(hatsigma2*(1/n + mean(x)^2/Sxx))
 
 abline(hatbeta0, hatbeta1, col = "red")
 
+# Hypothesis testing
+(tvalue <- hatbeta1/errorbeta1)
+2*(1 - pt(abs(tvalue), df = n-2))
+```
 
+# Linear Regression using lm
 
-# testing hypothesis beta1 = 0
-(tvalue<-hatbeta1/errorbeta1)
-# p-value for two tail test
-(2*(1 - pt(abs(tvalue), df = n-2)))
-
-
-(1 - pt(abs(tvalue), df = n-2))
-
-qt(0.975, df = n-2)  # critical value for 95% confidence interval
-qnorm(0.975)
-
-
-# testing hypothesis beta0 = 0
-(tvalue0<-hatbeta0/errorbeta0)
-
-# p-value for two tail test
-(2*(1 - pt(abs(tvalue0), df = n-2)))
-
-# plotting tdistribution
-
-
-
-
-#####################################
-# Second Method  #  R lm Code
-
-Out1<-lm(Shear~Age) # Get regression coefficients
+```{r, warning = FALSE, message = FALSE, fig.width = 4, fig.height = 3, fig.align = "center"}
+Out1 <- lm(y ~ x)
 summary(Out1)
 plot(Out1)
 anova(Out1)
-abline(2627.82, -37.15)  # to add regression line
-
-# For more detailes Regression outputs
-
-(fitted <- 2627.822 -37.154 *x)
-fitted(Out1)  # hat y
+abline(2627.82, -37.15)
 Out1$fitted.values
-
-(redisuals <- y - fitted)
-resid(Out1)   # residuals
-Out1$residuals
-
-anova(Out1)   # Analysis of Variance Table
-
-
-
-
+resid(Out1)
 ```
-
-
-```{r example}
-
-# example 1
-x <- c(24.00, 29.00, 24.00, 22.50, 17.75, 21.50, 24.00, 28.50, 21.00, 24.00, 23.50, 20.00)
-y <- c(34.00, 33.69, 35.00,35.00, 28.00, 34.00, 29.50, 30.00, 28.00, 33.00, 17.50, 28.00)
-plot(x, y)
-
-grades.fit <- lm(x ~ y)
-summary(grades.fit)
-
-
-n<-length(x)
-Sxx<-sum(x^2)-(sum(x))^2/n  # sum of squares of x
-Sxy<-sum(x*y)-sum(x)*sum(y)/n   # sum of squares of xy
-
-(hatbeta1<-Sxy/Sxx)
-(hatbeta0<-mean(y)-hatbeta1*mean(x))
-
-abline(hatbeta0, hatbeta1, col = "red", lty = "dashed")
-
-
-# example 2
-x <- c(4, -1, 2, 3, 5, 4, 1)
-y <- c(15, 10, 16, 12, 18, 17, 14)
-plot(x, y, main = "Scatter plot: x vs y")
-
-test.fit <- lm(x ~ y)
-summary(grades.fit)
-
-
-n<-length(x)
-Sxx<-sum(x^2)-(sum(x))^2/n  # sum of squares of x
-Sxy<-sum(x*y)-sum(x)*sum(y)/n   # sum of squares of xy
-
-(hatbeta1<-Sxy/Sxx)
-(hatbeta0<-mean(y)-hatbeta1*mean(x))
-
-abline(hatbeta0, hatbeta1, col = "red", lty = "dashed")
-
-(mean(test.fit$residuals))
-test.fit$fitted.values
-```
-
-
-
-```{r income_data}
-income_data <- read.csv("incomedata.csv")
-head(income_data)
-x <- income_data$income
-y <- income_data$happiness
-plot(x, y, col = "blue")
-abline(lm(y ~ x), col = "red")
-model <- lm(x ~y)
-summary(model)
-plot(model)
-
-
-# confidence interval for beta1
-se <- summary(model)$coefficients[2, 2]  # standard error of beta1
-beta1 <- summary(model)$coefficients[2, 1]  # estimate of beta1
-n <- nrow(income_data)  # number of observations
-t_value <- qt(0.975, df = n - 2)  # critical value for 95% confidence interval
-lower_bound <- beta1 - t_value * se
-upper_bound <- beta1 + t_value * se
-cat("95% confidence interval for beta1: [", lower_bound, ", ", upper_bound, "]\n")
-
-
-
-```
-
-
-```{r }
-library(MPV)
-data(table.b1)
-head(table.b1)
-# attach(table.b1)
-# detatch(table.b1)
-plot(table.b1$x8, table.b1$y)
-abline(model$coefficients[1],model$coefficients[2], col = "red", lty = "dashed")
-model <- lm(table.b1$y ~ table.b1$x8)
-summary(model)
-summary(aov(model))
-# confidence interval for beta1
-```
-```{r multiple_regression}
-#| eval: false
-library(MPV)
-data(p8.3)
-head(p8.3)
-attach(p8.3)
-par(mfrow = c(1,3))
-plot(x1, x2)
-plot(x1, y)
-plot(x2, y)
-x <- matrix(rbind(rep(1, length(y)),x1, x2), byrow = TRUE, ncol = 3)
-# bind by row
-
-beta_hat <- solve(t(x)%*%x)%*%t(x)%*%y
-model <- lm(y ~ x1 + x2)
-summary(model)
-anova(model)
-```
-
-
-
-
